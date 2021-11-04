@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@*": ["src/*"],
+      "@modules/*": ["src/modules/*"],
+      "@services/*": ["src/services/*"],
+      "@utils/*": ["src/utils/*"],
+      "@interface/*": ["src/types/interfaces/*"],
+      "@enum/*": ["src/types/enums/*"],
+      "@guard/*": ["src/guards/*"],
+      "@constants/*": ["src/constants/*"],
+      "@templates/*": ["src/templates/*"],
+      "@app/*": ["src/modules/app/*"],
+      "@auth/*": ["src/modules/auth/*"],
+      "@user/*": ["src/modules/user/*"],
+      "@mail/*": ["src/modules/mail/*"],
+      "@account/*": ["src/modules/account/*"],
+      "@plan/*": ["src/modules/plan/*"],
+      "@card/*": ["src/modules/card/*"],
+      "@beneficiary/*": ["src/modules/beneficiary/*"],
+      "@debit/*": ["src/modules/debit/*"],
+      "@transaction/*": ["src/modules/transaction/*"],
+      "@admin_user/*": ["src/modules/admin_user/*"]
+      // add more paths heres
+    }
+  }
+}

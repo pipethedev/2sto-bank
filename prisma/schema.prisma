@@ -1,0 +1,363 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+//We have to be PCI-DSS Compliant
+
+datasource db {
+  provider = "mysql"
+  url      = env("CLEARDB_DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum CURRENCY {
+  NGN
+  USD
+  EUR
+  GBP
+}
+
+enum PROVIDER {
+  RAVE
+  STERLING
+  PROVIDUS
+}
+
+enum ADMIN_USER_ROLES {
+  SUPER
+  GENERAL
+}
+
+enum USER_ROLES {
+  MEMBER
+  ADMIN
+}
+
+enum USER_STATUS {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum KYC {
+  NIN
+  BVN
+}
+
+enum TYPE {
+  CREDIT
+  DEBIT
+}
+
+enum CATEGORY {
+  WALLET
+  PLAN
+}
+
+enum GENDER {
+  MALE
+  FEMALE
+  NOT
+}
+
+enum PLATFORM {
+  P2P
+  TRANSFER
+  CARD
+  QRCODE
+}
+
+enum OCCURENCE {
+  WEEKLY
+  MONTHLY
+  ANNUALLY
+}
+
+enum MESSAGETYPE {
+  ALERT
+  INFO
+  UPDATE
+}
+
+enum BUSINESSTYPE {
+  LLC
+  PLC
+  NGO
+  PARTNERSHIP
+  SOLE
+}
+
+enum MERCHANT {
+  MTN
+  AIRTEL
+  GLO
+  MOBILE
+  DSTV
+  GOTV
+  STARTIMES
+  SMILE
+  SPECTRANT
+  IKEC
+}
+
+enum CARDTYPE {
+  MASTERCARD
+  VISA
+  VERVE
+  AMERICA_EXPRESS
+}
+
+enum AUTHMETHOD {
+  PASSWORD
+  FINGERPRINT
+  FACEID
+}
+
+enum DOCUMENTTYPE {
+  UTILITY
+  LISCENSE
+  PERSONAL
+}
+
+model AdminUser {
+  id Int @id @default(autoincrement())
+  uid String @unique @default(uuid())
+  firstname String?
+  lastname String?
+  role ADMIN_USER_ROLES @default(GENERAL)
+  username String @unique
+  password String
+  status USER_STATUS @default(ACTIVE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) 
+  @@map("admin_users")
+}
+
+model User {
+  id  Int @id @default(autoincrement())
+  uid String @unique @default(uuid())
+  firstname String?
+  lastname String?
+  username String? @unique
+  phone String?
+  email String? @unique
+  image String @default("none")
+  notifiable Boolean @default(false)
+  pin String?
+  deviceId String?
+  notification_token String?
+  bio String?
+  address String?
+  otp String?
+  otp_verified Boolean @default(false)
+  email_verified_at DateTime?
+  password String?
+  bvn String?
+  kyc String?
+  qrcode String? @db.LongText()
+  type KYC
+  auth AUTHMETHOD?
+  role USER_ROLES @default(MEMBER)
+  status USER_STATUS @default(ACTIVE)
+  accountVerifyToken  String?
+  accountVerifyExpires  DateTime?
+  passwordChangedAt DateTime?
+  passwordResetToken String?
+  passwordResetExpires DateTime?
+  kin Kin?
+  documents Document[]
+  cards Card[]
+  links Link[]
+  virtual_cards VirtualCard[]
+  messages Message[]
+  business Business[]
+  beneficiaries Beneficiary[]
+  accounts Account[]
+  plans Plan[]
+  transactions Transaction[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) 
+  @@map("users")
+}
+
+//User must only have one next of kin
+model Kin {
+  id  Int @id @default(autoincrement())
+  uid String @unique @default(uuid())
+  user_id String
+  firstname String
+  lastname String
+  email String
+  relationship String
+  gender GENDER
+  user User @relation(fields: [user_id], references: [uid])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) 
+  @@map("kins")
+}
+
+model Account {
+  id  Int @id @default(autoincrement())
+  uid String @unique @default(uuid())
+  user_id String
+  balance Int? @default(0)
+  account String?
+  account_code String?
+  reference String?
+  visibility Boolean? @default(true)
+  transactions Transaction[]
+  plan Plan[]
+  currency CURRENCY @default(NGN)
+  user User? @relation(fields: [user_id], references: [uid])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) 
+  @@map("accounts")
+}
+
+model Document {
+  id  Int @id @default(autoincrement())
+  uid String @unique @default(uuid())
+  user_id String
+  business_id String
+  file String
+  type DOCUMENTTYPE
+  user User? @relation(fields: [user_id], references: [uid])
+  business Business? @relation(fields: [business_id], references: [uid])
+  @@map("documents")
+}
+
+model Beneficiary {
+  id  Int @id @default(autoincrement())
+  uid String @unique @default(uuid())
+  user_id String?
+  name String?
+  account_number String?
+  account_bank String?
+  recipient_id String?
+  user User? @relation(fields: [user_id], references: [uid])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) 
+  @@map("beneficiaries")
+}
+
+model Plan {
+  id  Int @id @default(autoincrement())
+  uid String @unique @default(uuid())
+  user_id String
+  account_id String? @default("none")
+  name String
+  emoji String?
+  spent Int? @default(0)
+  limit Int?
+  transactions Transaction[]
+  user User? @relation(fields: [user_id], references: [uid])
+  account Account? @relation(fields: [account_id], references: [uid])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) 
+  @@map("plans")
+}
+
+model Transaction {
+  id  Int @id @default(autoincrement())
+  uid String @unique @default(uuid())
+  budget_id String?
+  account_id String?
+  user_id String
+  recipient_id String?
+  summary String
+  analytics Boolean @default(false)
+  amount Int
+  alert_type TYPE
+  type PLATFORM
+  merchant MERCHANT?
+  narration String
+  user User @relation(fields: [user_id], references: [uid])
+  account Account? @relation(fields: [account_id], references: [uid])
+  plan Plan? @relation(fields: [budget_id], references: [uid])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) 
+  @@map("transactions")
+}
+
+model VirtualCard {
+  id  Int @id @default(autoincrement())
+  uid String @unique @default(uuid())
+  user_id String
+  card_fund_id String
+  nickname String
+  card_pan String
+  masked_pan String
+  expiry String
+  cvv String
+  city String
+  state String
+  billing_address String
+  limit Int?
+  user User @relation(fields: [user_id], references: [uid])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) 
+  @@map("virtual_cards")
+}
+
+model Card {
+  id  Int @id @default(autoincrement())
+  uid String @unique @default(uuid())
+  user_id String
+  pan_number String
+  authKey String
+  last4 String
+  expiry String
+  type CARDTYPE @default(MASTERCARD)
+  active Boolean @default(false)
+  user User @relation(fields: [user_id], references: [uid])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) 
+  @@map("cards")
+}
+
+model Message {
+  id  Int @id @default(autoincrement())
+  uid String @unique @default(uuid())
+  user_id String
+  title String
+  message String @db.LongText()
+  type MESSAGETYPE
+  user User @relation(fields: [user_id], references: [uid])
+  createdAt DateTime @default(now())
+  @@map("messages")
+}
+
+model Link {
+  id  Int @id @default(autoincrement())
+  uid String @unique @default(uuid())
+  user_id String
+  amount Int
+  narration String?
+  token String @unique
+  paid Boolean @default(false)
+  user User @relation(fields: [user_id], references: [uid])
+  @@map("links")
+}
+
+model Business {
+  id  Int @id @default(autoincrement())
+  uid String @unique @default(uuid())
+  user_id String
+  name String
+  business_type BUSINESSTYPE
+  industry String
+  pin String
+  description String @db.LongText()
+  address String
+  flat String
+  country String
+  city String
+  documents Document[]
+  verified Boolean @default(false)
+  user User @relation(fields: [user_id], references: [uid])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) 
+  @@map("business")
+}
